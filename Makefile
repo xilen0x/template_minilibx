@@ -1,3 +1,16 @@
+# **************************************************************************** #
+#                                                                              #
+#                                                         :::      ::::::::    #
+#    Makefile                                           :+:      :+:    :+:    #
+#                                                     +:+ +:+         +:+      #
+#    By: castorga <marvin@42.fr>                    +#+  +:+       +#+         #
+#                                                 +#+#+#+#+#+   +#+            #
+#    Created: 2024/09/17 16:34:23 by castorga          #+#    #+#              #
+#    Updated: 2024/09/17 16:34:25 by castorga         ###   ########.fr        #
+#                                                                              #
+# **************************************************************************** #
+
+
 # Nombre del ejecutable
 NAME = cub3D
 
@@ -14,7 +27,7 @@ endif
 
 # Compilador y FLAGS
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror #-g -fsanitize=address
+CFLAGS = -Wall -Wextra -Werror -g -fsanitize=address
 
 # Makefile
 MKF := Makefile
@@ -25,26 +38,26 @@ MLX_DIR = lib/mlx/
 SRCS_DIR = src/
 OBJS_DIR = .objs/
 DEP_DIR = .dep/
+INCLUDE_DIR = include/
 
 # Archivos de bibliotecas
 LIBFT_FILE = libft.a
 MLX_FILE = libmlx.a
 
 # Archivos fuente
-SRC_FILES = main.c \
-			utils_1.c
+SRC_FILES = main.c utils_1.c
 
 # Archivos objeto
 OBJ_FILES = $(SRC_FILES:.c=.o)
 
 # Archivos de dependencias
-DEPS_FILES = $(SRC_FILES:.o=.d)
+DEP_FILES = $(SRC_FILES:.c=.d)
 
 # Rutas completas de las bibliotecas
 LIBFT = $(addprefix $(LIBFT_DIR), $(LIBFT_FILE))
 MLX = $(addprefix $(MLX_DIR), $(MLX_FILE))
 OBJS = $(addprefix $(OBJS_DIR), $(OBJ_FILES))
-DEPS = $(addprefix $(DEP_DIR), $(DEPS_FILES))
+DEPS = $(addprefix $(DEP_DIR), $(DEP_FILES))
 
 # eliminar archivos
 RM = rm -rf
@@ -53,7 +66,7 @@ RM = rm -rf
 AR = ar rc
 
 # Rutas de inclusión
-INCLUDE = -I include/ -I $(LIBFT_DIR) -I $(MLX_DIR)
+INCLUDE = -I $(INCLUDE_DIR) -I $(LIBFT_DIR) -I $(MLX_DIR)
 
 # Colores
 YELLOW = \033[1;33m
@@ -79,20 +92,17 @@ fclean: clean
 # Regla para reconstruir todo
 re: fclean all
 
-# Regla para crear el directorio de los archivos objeto
-$(OBJS_DIR):
-	@mkdir -p $(OBJS_DIR)
-
-# Regla para crear el directorio de dependencias
-$(DEP_DIR):
-	@mkdir -p $(DEP_DIR)
+# Regla para crear los directorios necesarios
+make_dirs:
+	@mkdir -p $(OBJS_DIR) $(DEP_DIR)
+	@mkdir -p $(dir $(OBJS))
+	@mkdir -p $(dir $(DEPS))
 
 # Regla para compilar archivos fuente en archivos objeto
-$(OBJS_DIR)%.o: $(SRCS_DIR)%.c $(MKF) | $(OBJS_DIR) $(DEP_DIR)
-	@mkdir -p $(dir $@)
+$(OBJS_DIR)%.o: $(SRCS_DIR)%.c $(INCLUDE_DIR)*.h | make_dirs
 	@echo "▶ Compiling... $<"
-	@$(CC) $(CFLAGS) -MMD -c $< -o $@ $(INCLUDE)
-	@mv $(patsubst %.o,%.d,$@) $(DEP_DIR)/$(notdir $(@:.o=.d))
+	@$(CC) $(CFLAGS) $(INCLUDE) -MMD -MP -c $< -o $@
+	@mv $(basename $@).d $(DEP_DIR)$(notdir $(basename $@)).d
 
 # Regla para crear la biblioteca estática solo si es necesario
 $(LIBFT):
@@ -105,7 +115,7 @@ $(MLX):
 subsystems: $(LIBFT) $(MLX)
 
 # Regla para crear el ejecutable
-$(NAME): $(OBJS) $(LIBFT) $(MLX)
+$(NAME): subsystems $(OBJS)
 	@$(CC) $(CFLAGS) $(OBJS) -L$(LIBFT_DIR) -lft -L$(MLX_DIR) -lmlx $(MLXFLAGS) -o $@
 	@echo " "
 	@echo "$(GREEN)▉▉▉▉▉▉▉▉▉▉ Cub3D successfully compiled! ▉▉▉▉▉▉▉▉▉▉ $(RESET)"
@@ -115,4 +125,4 @@ $(NAME): $(OBJS) $(LIBFT) $(MLX)
 -include $(DEPS)
 
 # Objetivos PHONY
-.PHONY: all clean fclean re subsystems
+.PHONY: all clean fclean re subsystems make_dirs

@@ -1,0 +1,6 @@
+.dep/
+.objs/
+cub3D
+lib/libft/
+lib/mlx
+
